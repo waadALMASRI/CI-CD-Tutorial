@@ -1,0 +1,13 @@
+# ============================================================
+# requirements.txt — The Package Manager Manifest
+# ============================================================
+# This is Python's equivalent of package.json.
+# When you run "pip install -r requirements.txt", pip reads
+# this file and installs every library listed here.
+#
+# In the JS project, package.json listed Jest.
+# Here, we list pytest (Python's most popular test framework).
+# ============================================================
+
+pytest>=8.0
+pytest-cov>=5.0

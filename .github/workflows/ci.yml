@@ -1,0 +1,60 @@
+# ============================================================
+# .github/workflows/ci.yml — Your CI Pipeline
+# ============================================================
+# This is what GitHub Actions reads. When you push code or
+# open a pull request, GitHub spins up a fresh virtual machine,
+# installs Python and your dependencies, and runs your tests.
+#
+# If the tests pass  → green checkmark ✓
+# If any test fails  → red X, pipeline stops, you get notified
+# ============================================================
+
+name: CI Pipeline
+
+# TRIGGER: When does this pipeline run?
+on:
+  push:
+    branches: [main]          # Runs on every push to main
+  pull_request:
+    branches: [main]          # Runs on every PR targeting main
+
+# JOBS: What work does the pipeline do?
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest    # Use a fresh Ubuntu VM
+
+    steps:
+      # Step 1: Download your code onto the VM
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Install Python (the runtime)
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Step 3: Upgrade pip (the package manager itself)
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      # Step 4: Install dependencies from requirements.txt
+      #         This is the PACKAGE MANAGER in action!
+      #         "pip install" reads requirements.txt and
+      #         installs pytest + pytest-cov
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # Step 5: Run the TEST SUITE
+      #         "pytest" auto-discovers every file matching
+      #         test_*.py and runs every function starting
+      #         with test_
+      - name: Run tests
+        run: pytest -v
+
+      # Step 6 (bonus): Run tests WITH coverage report
+      #         Shows what % of your code is tested.
+      #         --cov=src measures coverage of the src/ folder.
+      #         --cov-fail-under=80 fails if coverage < 80%.
+      - name: Run tests with coverage
+        run: pytest --cov=src --cov-report=term-missing --cov-fail-under=80
