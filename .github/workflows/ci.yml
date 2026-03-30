@@ -18,8 +18,21 @@ on:
   pull_request:
     branches: [main]          # Runs on every PR targeting main
 
+# PERMISSIONS: GitHub Pages needs these to deploy
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 # JOBS: What work does the pipeline do?
 jobs:
+  # ===========================================================
+  # STAGE 1: BUILD AND TEST (CI)
+  # ===========================================================
+  # This is the same CI job that also
+  # generates an HTML coverage report and saves it as an
+  # "artifact" — a file that the deploy stage can pick up.
+  # ===========================================================
   build-and-test:
     runs-on: ubuntu-latest    # Use a fresh Ubuntu VM
 
@@ -45,16 +58,56 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      # Step 5: Run the TEST SUITE
-      #         "pytest" auto-discovers every file matching
-      #         test_*.py and runs every function starting
-      #         with test_
-      - name: Run tests
-        run: pytest -v
+      # # Step 5: Run the TEST SUITE
+      # #         "pytest" auto-discovers every file matching
+      # #         test_*.py and runs every function starting
+      # #         with test_
+      # - name: Run tests
+      #   run: pytest -v
 
-      # Step 6 (bonus): Run tests WITH coverage report
-      #         Shows what % of your code is tested.
-      #         --cov=src measures coverage of the src/ folder.
-      #         --cov-fail-under=80 fails if coverage < 80%.
+      # # Step 6 (bonus): Run tests WITH coverage report
+      # #         Shows what % of your code is tested.
+      # #         --cov=src measures coverage of the src/ folder.
+      # #         --cov-fail-under=80 fails if coverage < 80%.
+      # - name: Run tests with coverage
+      #   run: pytest --cov=src --cov-report=term-missing --cov-fail-under=80
+      
+      # Test Step 5 and 6 combined: Run tests with coverage report, but only show missing lines
       - name: Run tests with coverage
-        run: pytest --cov=src --cov-report=term-missing --cov-fail-under=80
+        run: pytest -v \
+          --cov=src \
+          --cov-report=term-missing \
+          --cov-report=html:coverage-report \
+          --cov-fail-under=80
+
+      # ARTIFACT: Save the HTML report so the deploy job can use it.
+      # This is the "artefact" concept from Chapter 2 of your guide —
+      # the output of one stage passed to the next stage.
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report/
+
+  # ===========================================================
+  # STAGE 2: DEPLOY TO GITHUB PAGES (CD)
+  # ===========================================================
+  # This job ONLY runs if:
+  #   1. build-and-test passed (needs: build-and-test)
+  #   2. The push was to the main branch (not a PR)
+  #
+  # It takes the HTML coverage report artifact from Stage 1
+  # and publishes it to GitHub Pages.
+  # ===========================================================
+  deploy:
+    needs: build-and-test     # Only run if build-and-test succeeded
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'  # Only run on pushes to main
+    
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
