@@ -74,11 +74,7 @@ jobs:
       
       # Test Step 5 and 6 combined: Run tests with coverage report, but only show missing lines
       - name: Run tests with coverage
-        run: pytest -v \
-          --cov=src \
-          --cov-report=term-missing \
-          --cov-report=html:coverage-report \
-          --cov-fail-under=80
+        run: pytest -v --cov=src --cov-report=term-missing --cov-report=html:coverage-report --cov-fail-under=80
 
       # ARTIFACT: Save the HTML report so the deploy job can use it.
       # This is the "artefact" concept from Chapter 2 of your guide —
@@ -86,7 +82,7 @@ jobs:
       - name: Upload coverage report
         uses: actions/upload-pages-artifact@v3
         with:
-          name: coverage-report/
+          path: coverage-report/
 
   # ===========================================================
   # STAGE 2: DEPLOY TO GITHUB PAGES (CD)
